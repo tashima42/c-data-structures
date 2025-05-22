@@ -19,14 +19,22 @@ Vector new_vector() {
   return v;
 }
 
+void grow(Vector *v, int increase_by) {
+  if (increase_by < 0) {
+    fprintf(stderr, "Negative values are not allowed when growing a vector");
+    exit(EXIT_FAILURE);
+  }
+  v->array = realloc(v->array, (v->capacity + increase_by) * sizeof(int));
+  if (v->array == NULL) {
+    fprintf(stderr, "Memory reallocation failed\n");
+    exit(EXIT_FAILURE);
+  }
+  v->capacity += increase_by;
+}
+
 void append(Vector *v, int value) {
   if (v->size == v->capacity) {
-    v->capacity *= 2;
-    v->array = realloc(v->array, v->capacity * sizeof(int));
-    if (v->array == NULL) {
-      fprintf(stderr, "Memory reallocation failed\n");
-      exit(EXIT_FAILURE);
-    }
+    grow(v, v->capacity); // double the size
   }
   v->size++;
   v->array[v->size - 1] = value;
@@ -64,6 +72,21 @@ int remove_at(Vector *v, int index) {
   return value;
 }
 
+void insert_at(Vector *v, int index, int value) {
+  if (index < 0 || index >= v->size) {
+    fprintf(stderr, "Index out of bounds\n");
+    exit(EXIT_FAILURE);
+  }
+  if (v->size == v->capacity) {
+    grow(v, v->capacity); // double the size
+  }
+
+  for (int i = v->size; i > index; i--) {
+    v->array[i] = v->array[i - 1];
+  }
+  v->array[index] = value;
+}
+
 void shrink_size(Vector *v) {
   if (v->size == v->capacity) {
     return;
@@ -74,6 +97,15 @@ void shrink_size(Vector *v) {
     fprintf(stderr, "Memory reallocation failed\n");
     exit(EXIT_FAILURE);
   }
+}
+
+int search(Vector *v, int value) {
+  for (int i = 0; i < v->size; i++) {
+    if (value == get(v, i)) {
+      return i;
+    }
+  }
+  return -1;
 }
 
 void pretty_print(Vector *v) {
@@ -110,13 +142,19 @@ int vector_run() {
 
   remove_at(&v, 2);
   remove_at(&v, 0);
+
+  insert_at(&v, 1, 3);
+
   pretty_print(&v);
 
-  printf("size of array: %d\n", v.capacity);
+  printf("search 5: %d\n", search(&v, 5));
+  printf("search 12: %d\n", search(&v, 12));
+
+  printf("capacity: %d\n", v.capacity);
 
   shrink_size(&v);
 
-  printf("size of array: %d\n", v.capacity);
+  printf("capacity after shrink: %d\n", v.capacity);
 
   return 0;
 }
